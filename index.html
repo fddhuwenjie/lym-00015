@@ -19,15 +19,24 @@
             </div>
         </header>
 
+        <div class="tab-container">
+            <div class="tab-buttons">
+                <button class="tab-btn active" data-tab="basic">📊 基础分析</button>
+                <button class="tab-btn" data-tab="stft">🌊 STFT 瀑布图</button>
+                <button class="tab-btn" data-tab="iir">🎚️ IIR 滤波器设计</button>
+                <button class="tab-btn" data-tab="modem">📡 调制解调演示</button>
+            </div>
+        </div>
+
         <div class="main-content">
             <aside class="control-panel">
-                <div class="panel-section">
+                <div class="panel-section" id="basic-controls">
                     <h3>🎛️ 信号分量控制</h3>
                     <div id="signal-components"></div>
                     <button id="btn-add-component" class="btn btn-primary btn-block">+ 添加分量</button>
                 </div>
 
-                <div class="panel-section">
+                <div class="panel-section" id="basic-controls-2">
                     <h3>⚙️ 时域参数</h3>
                     <div class="form-group">
                         <label>采样率 (Hz)</label>
@@ -51,7 +60,7 @@
                     </div>
                 </div>
 
-                <div class="panel-section">
+                <div class="panel-section" id="basic-controls-3">
                     <h3>🪟 窗函数</h3>
                     <div class="form-group">
                         <select id="window-function">
@@ -69,8 +78,8 @@
                     </div>
                 </div>
 
-                <div class="panel-section">
-                    <h3>🔍 滤波器</h3>
+                <div class="panel-section" id="basic-controls-4">
+                    <h3>🔍 FIR 滤波器</h3>
                     <div class="form-group">
                         <label>滤波器类型</label>
                         <select id="filter-type">
@@ -96,7 +105,7 @@
                     </div>
                 </div>
 
-                <div class="panel-section">
+                <div class="panel-section" id="basic-controls-5">
                     <h3>📊 频谱显示</h3>
                     <div class="form-group">
                         <select id="spectrum-type">
@@ -111,50 +120,343 @@
                         </label>
                     </div>
                 </div>
+
+                <div class="panel-section" id="stft-controls" style="display: none;">
+                    <h3>🌊 STFT 参数</h3>
+                    <div class="form-group">
+                        <label>窗长 (点数)</label>
+                        <select id="stft-window-size">
+                            <option value="128">128</option>
+                            <option value="256">256</option>
+                            <option value="512" selected>512</option>
+                            <option value="1024">1024</option>
+                            <option value="2048">2048</option>
+                            <option value="4096">4096</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>重叠率 (%)</label>
+                        <input type="range" id="stft-overlap" min="25" max="87.5" value="50" step="12.5">
+                        <span id="stft-overlap-value">50%</span>
+                    </div>
+                    <div class="form-group">
+                        <label>跳长 (点数)</label>
+                        <input type="number" id="stft-hop" value="256" min="16" max="2048" step="16" readonly>
+                    </div>
+                    <div class="form-group">
+                        <label>频率轴刻度</label>
+                        <select id="stft-freq-scale">
+                            <option value="linear" selected>线性 (Linear)</option>
+                            <option value="log">对数 (Log)</option>
+                            <option value="mel">梅尔 (Mel)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>动态范围 (dB)</label>
+                        <input type="range" id="stft-db-range" min="40" max="120" value="80" step="10">
+                        <span id="stft-db-range-value">80 dB</span>
+                    </div>
+                    <div class="form-group">
+                        <label>窗函数</label>
+                        <select id="stft-window-type">
+                            <option value="rectangular">矩形窗</option>
+                            <option value="hann" selected>汉宁窗</option>
+                            <option value="hamming">汉明窗</option>
+                            <option value="blackman">布莱克曼窗</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="stft-show-slice" checked> 显示瞬时频谱切片
+                        </label>
+                    </div>
+                </div>
+
+                <div class="panel-section" id="iir-controls" style="display: none;">
+                    <h3>🎚️ IIR 滤波器设计</h3>
+                    <div class="form-group">
+                        <label>设计模式</label>
+                        <select id="iir-design-mode">
+                            <option value="manual" selected>手动设计</option>
+                            <option value="butterworth">Butterworth</option>
+                            <option value="chebyshev1">Chebyshev I</option>
+                            <option value="chebyshev2">Chebyshev II</option>
+                            <option value="elliptic">Elliptic</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>滤波器类型</label>
+                        <select id="iir-filter-type">
+                            <option value="lowpass" selected>低通 (LPF)</option>
+                            <option value="highpass">高通 (HPF)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="iir-order-group">
+                        <label>滤波器阶数</label>
+                        <input type="range" id="iir-order" min="1" max="10" value="4">
+                        <span id="iir-order-value">4</span>
+                    </div>
+                    <div class="form-group" id="iir-fc-group">
+                        <label>截止频率 (Hz)</label>
+                        <input type="number" id="iir-fc" value="1000" min="1" max="20000" step="1">
+                    </div>
+                    <div class="form-group" id="iir-ripple-group" style="display: none;">
+                        <label>通带波纹 (dB)</label>
+                        <input type="number" id="iir-ripple" value="1" min="0.1" max="10" step="0.1">
+                    </div>
+                    <div class="form-group" id="iir-stopband-group" style="display: none;">
+                        <label>阻带衰减 (dB)</label>
+                        <input type="number" id="iir-stopband" value="40" min="20" max="100" step="5">
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="iir-log-amp" checked> 幅度对数刻度 (dB)
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="iir-log-freq" checked> 频率对数刻度
+                        </label>
+                    </div>
+                    <button id="iir-generate" class="btn btn-primary btn-block">生成滤波器</button>
+                    <button id="iir-reset" class="btn btn-secondary btn-block" style="margin-top: 8px;">重置极零点</button>
+                    <button id="iir-apply" class="btn btn-secondary btn-block" style="margin-top: 8px;">应用到信号</button>
+                </div>
+
+                <div class="panel-section" id="iir-coeff-controls" style="display: none;">
+                    <h3>🔢 双二阶系数</h3>
+                    <div id="iir-sections"></div>
+                    <button id="iir-add-section" class="btn btn-secondary btn-block" style="margin-top: 8px;">+ 添加双二阶段</button>
+                </div>
+
+                <div class="panel-section" id="modem-controls" style="display: none;">
+                    <h3>📡 调制参数</h3>
+                    <div class="form-group">
+                        <label>调制类型</label>
+                        <select id="modem-type">
+                            <option value="am" selected>AM (调幅)</option>
+                            <option value="dsb-sc">DSB-SC (抑制载波双边带)</option>
+                            <option value="ssb">SSB (单边带)</option>
+                            <option value="fm">FM (调频)</option>
+                            <option value="pm">PM (调相)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>载波频率 (Hz)</label>
+                        <input type="number" id="modem-carrier" value="5000" min="100" max="20000" step="10">
+                    </div>
+                    <div class="form-group">
+                        <label>调制度</label>
+                        <input type="range" id="modem-index" min="0.1" max="5" value="1" step="0.1">
+                        <span id="modem-index-value">1.0</span>
+                    </div>
+                    <div class="form-group" id="modem-sideband-group" style="display: none;">
+                        <label>边带选择</label>
+                        <select id="modem-sideband">
+                            <option value="upper" selected>上边带 (USB)</option>
+                            <option value="lower">下边带 (LSB)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="panel-section" id="demod-controls" style="display: none;">
+                    <h3>🔍 解调参数</h3>
+                    <div class="form-group">
+                        <label>解调方式</label>
+                        <select id="demod-type">
+                            <option value="envelope" selected>包络检波</option>
+                            <option value="coherent">相干解调</option>
+                            <option value="pll">PLL 锁相环</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>信噪比 (dB)</label>
+                        <input type="range" id="demod-snr" min="-20" max="60" value="30" step="1">
+                        <span id="demod-snr-value">30 dB</span>
+                    </div>
+                    <div class="form-group" id="demod-pll-group" style="display: none;">
+                        <label>PLL 环路带宽</label>
+                        <input type="range" id="demod-pll-bw" min="0.001" max="0.1" value="0.01" step="0.001">
+                        <span id="demod-pll-bw-value">0.01</span>
+                    </div>
+                    <button id="modem-modulate" class="btn btn-primary btn-block">执行调制</button>
+                    <button id="modem-demodulate" class="btn btn-secondary btn-block" style="margin-top: 8px;">执行解调</button>
+                </div>
             </aside>
 
             <main class="display-area">
-                <div class="chart-container">
-                    <div class="chart-header">
-                        <h4>📈 时域波形</h4>
-                        <div class="chart-info">
-                            <span id="signal-info"></span>
+                <div class="tab-content" id="tab-basic">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h4>📈 时域波形</h4>
+                            <div class="chart-info">
+                                <span id="signal-info"></span>
+                            </div>
+                        </div>
+                        <canvas id="time-domain-canvas"></canvas>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h4>📉 频谱分析</h4>
+                            <div class="chart-info">
+                                <span id="spectrum-info"></span>
+                            </div>
+                        </div>
+                        <canvas id="frequency-domain-canvas"></canvas>
+                    </div>
+
+                    <div class="chart-container" id="filter-container" style="display: none;">
+                        <div class="chart-header">
+                            <h4>🎚️ FIR 滤波效果对比</h4>
+                        </div>
+                        <div class="filter-comparison">
+                            <div class="filter-chart">
+                                <h5>滤波后时域波形</h5>
+                                <canvas id="filtered-time-canvas"></canvas>
+                            </div>
+                            <div class="filter-chart">
+                                <h5>滤波后频谱</h5>
+                                <canvas id="filtered-freq-canvas"></canvas>
+                            </div>
                         </div>
                     </div>
-                    <canvas id="time-domain-canvas"></canvas>
+
+                    <div class="chart-container" id="window-comp-container" style="display: none;">
+                        <div class="chart-header">
+                            <h4>🪟 窗函数泄漏对比</h4>
+                        </div>
+                        <canvas id="window-comp-canvas"></canvas>
+                    </div>
                 </div>
 
-                <div class="chart-container">
-                    <div class="chart-header">
-                        <h4>📉 频谱分析</h4>
-                        <div class="chart-info">
-                            <span id="spectrum-info"></span>
+                <div class="tab-content" id="tab-stft" style="display: none;">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h4>🌊 短时傅里叶变换瀑布图</h4>
+                            <div class="chart-info">
+                                <span id="stft-info"></span>
+                                <span id="stft-hover-info" style="margin-left: 20px;"></span>
+                            </div>
                         </div>
+                        <canvas id="stft-canvas"></canvas>
                     </div>
-                    <canvas id="frequency-domain-canvas"></canvas>
+
+                    <div class="chart-container" id="stft-slice-container" style="display: none;">
+                        <div class="chart-header">
+                            <h4>📊 瞬时频谱切片</h4>
+                            <div class="chart-info">
+                                <span id="stft-slice-info"></span>
+                            </div>
+                        </div>
+                        <canvas id="stft-slice-canvas"></canvas>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h4>📈 原始时域波形</h4>
+                        </div>
+                        <canvas id="stft-time-canvas"></canvas>
+                    </div>
                 </div>
 
-                <div class="chart-container" id="filter-container" style="display: none;">
-                    <div class="chart-header">
-                        <h4>🎚️ 滤波效果对比</h4>
-                    </div>
-                    <div class="filter-comparison">
-                        <div class="filter-chart">
-                            <h5>滤波后时域波形</h5>
-                            <canvas id="filtered-time-canvas"></canvas>
+                <div class="tab-content" id="tab-iir" style="display: none;">
+                    <div class="iir-layout">
+                        <div class="iir-left">
+                            <div class="chart-container">
+                                <div class="chart-header">
+                                    <h4>⭕ 极零点分布图</h4>
+                                    <div class="chart-info">
+                                        <span id="iir-zpk-info"></span>
+                                    </div>
+                                </div>
+                                <canvas id="iir-polezero-canvas"></canvas>
+                            </div>
+
+                            <div class="chart-container">
+                                <div class="chart-header">
+                                    <h4>⚡ 冲激响应</h4>
+                                </div>
+                                <canvas id="iir-impulse-canvas"></canvas>
+                            </div>
                         </div>
-                        <div class="filter-chart">
-                            <h5>滤波后频谱</h5>
-                            <canvas id="filtered-freq-canvas"></canvas>
+                        <div class="iir-right">
+                            <div class="chart-container">
+                                <div class="chart-header">
+                                    <h4>📉 频率响应</h4>
+                                    <div class="chart-info">
+                                        <span id="iir-freq-info"></span>
+                                    </div>
+                                </div>
+                                <canvas id="iir-freq-canvas"></canvas>
+                            </div>
+
+                            <div class="chart-container" id="iir-applied-container" style="display: none;">
+                                <div class="chart-header">
+                                    <h4>🎚️ IIR 滤波效果对比</h4>
+                                </div>
+                                <div class="filter-comparison">
+                                    <div class="filter-chart">
+                                        <h5>原始信号</h5>
+                                        <canvas id="iir-original-canvas"></canvas>
+                                    </div>
+                                    <div class="filter-chart">
+                                        <h5>滤波后信号</h5>
+                                        <canvas id="iir-filtered-canvas"></canvas>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="chart-container" id="window-comp-container" style="display: none;">
-                    <div class="chart-header">
-                        <h4>🪟 窗函数泄漏对比</h4>
+                <div class="tab-content" id="tab-modem" style="display: none;">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h4>📡 原始调制信号 (基带)</h4>
+                        </div>
+                        <canvas id="modem-baseband-canvas"></canvas>
                     </div>
-                    <canvas id="window-comp-canvas"></canvas>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h4>📈 已调信号时域波形</h4>
+                            <div class="chart-info">
+                                <span id="modem-time-info"></span>
+                            </div>
+                        </div>
+                        <canvas id="modem-modulated-time-canvas"></canvas>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h4>📉 已调信号频谱</h4>
+                            <div class="chart-info">
+                                <span id="modem-freq-info"></span>
+                            </div>
+                        </div>
+                        <canvas id="modem-modulated-freq-canvas"></canvas>
+                    </div>
+
+                    <div class="chart-container" id="demod-container" style="display: none;">
+                        <div class="chart-header">
+                            <h4>🔍 解调结果对比</h4>
+                            <div class="chart-info">
+                                <span id="demod-info"></span>
+                            </div>
+                        </div>
+                        <div class="filter-comparison">
+                            <div class="filter-chart">
+                                <h5>原始信号 (蓝色)</h5>
+                                <canvas id="demod-original-canvas"></canvas>
+                            </div>
+                            <div class="filter-chart">
+                                <h5>解调恢复信号 (绿色)</h5>
+                                <canvas id="demod-recovered-canvas"></canvas>
+                            </div>
+                        </div>
+                        <div class="error-info" id="error-info"></div>
+                    </div>
                 </div>
             </main>
         </div>
