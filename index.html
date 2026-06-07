@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>信号生成与频谱分析工具</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <h1>📡 信号生成与频谱分析工具</h1>
+            <div class="header-actions">
+                <button id="btn-import" class="btn btn-secondary">📂 导入CSV</button>
+                <input type="file" id="file-import" accept=".csv" style="display: none;">
+                <button id="btn-export-signal" class="btn btn-secondary">💾 导出信号</button>
+                <button id="btn-export-spectrum" class="btn btn-secondary">💾 导出频谱</button>
+                <button id="btn-reset" class="btn btn-warning">🔄 重置示例</button>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <aside class="control-panel">
+                <div class="panel-section">
+                    <h3>🎛️ 信号分量控制</h3>
+                    <div id="signal-components"></div>
+                    <button id="btn-add-component" class="btn btn-primary btn-block">+ 添加分量</button>
+                </div>
+
+                <div class="panel-section">
+                    <h3>⚙️ 时域参数</h3>
+                    <div class="form-group">
+                        <label>采样率 (Hz)</label>
+                        <input type="number" id="sample-rate" value="44100" min="1000" max="192000" step="1000">
+                    </div>
+                    <div class="form-group">
+                        <label>窗口长度 (点数)</label>
+                        <select id="window-size">
+                            <option value="256">256</option>
+                            <option value="512">512</option>
+                            <option value="1024" selected>1024</option>
+                            <option value="2048">2048</option>
+                            <option value="4096">4096</option>
+                            <option value="8192">8192</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>时间轴缩放</label>
+                        <input type="range" id="time-zoom" min="1" max="100" value="10">
+                        <span id="time-zoom-value">1.0x</span>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <h3>🪟 窗函数</h3>
+                    <div class="form-group">
+                        <select id="window-function">
+                            <option value="rectangular">矩形窗 (Rectangular)</option>
+                            <option value="hann" selected>汉宁窗 (Hann)</option>
+                            <option value="hamming">汉明窗 (Hamming)</option>
+                            <option value="blackman">布莱克曼窗 (Blackman)</option>
+                            <option value="kaiser">凯泽窗 (Kaiser, β=6)</option>
+                        </select>
+                    </div>
+                    <div id="window-comparison">
+                        <label>
+                            <input type="checkbox" id="show-window-comparison"> 显示泄漏对比
+                        </label>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <h3>🔍 滤波器</h3>
+                    <div class="form-group">
+                        <label>滤波器类型</label>
+                        <select id="filter-type">
+                            <option value="none">无</option>
+                            <option value="lowpass">低通 (LPF)</option>
+                            <option value="highpass">高通 (HPF)</option>
+                            <option value="bandpass">带通 (BPF)</option>
+                            <option value="bandstop">带阻 (BSF)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>截止频率1 (Hz)</label>
+                        <input type="number" id="filter-fc1" value="1000" min="1" max="20000" step="1">
+                    </div>
+                    <div class="form-group" id="fc2-group" style="display: none;">
+                        <label>截止频率2 (Hz)</label>
+                        <input type="number" id="filter-fc2" value="3000" min="1" max="20000" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label>滤波器阶数</label>
+                        <input type="range" id="filter-order" min="1" max="64" value="32">
+                        <span id="filter-order-value">32</span>
+                    </div>
+                </div>
+
+                <div class="panel-section">
+                    <h3>📊 频谱显示</h3>
+                    <div class="form-group">
+                        <select id="spectrum-type">
+                            <option value="magnitude" selected>幅度谱</option>
+                            <option value="phase">相位谱</option>
+                            <option value="psd">功率谱密度 (PSD)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="log-scale" checked> 对数刻度 (dB)
+                        </label>
+                    </div>
+                </div>
+            </aside>
+
+            <main class="display-area">
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h4>📈 时域波形</h4>
+                        <div class="chart-info">
+                            <span id="signal-info"></span>
+                        </div>
+                    </div>
+                    <canvas id="time-domain-canvas"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h4>📉 频谱分析</h4>
+                        <div class="chart-info">
+                            <span id="spectrum-info"></span>
+                        </div>
+                    </div>
+                    <canvas id="frequency-domain-canvas"></canvas>
+                </div>
+
+                <div class="chart-container" id="filter-container" style="display: none;">
+                    <div class="chart-header">
+                        <h4>🎚️ 滤波效果对比</h4>
+                    </div>
+                    <div class="filter-comparison">
+                        <div class="filter-chart">
+                            <h5>滤波后时域波形</h5>
+                            <canvas id="filtered-time-canvas"></canvas>
+                        </div>
+                        <div class="filter-chart">
+                            <h5>滤波后频谱</h5>
+                            <canvas id="filtered-freq-canvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-container" id="window-comp-container" style="display: none;">
+                    <div class="chart-header">
+                        <h4>🪟 窗函数泄漏对比</h4>
+                    </div>
+                    <canvas id="window-comp-canvas"></canvas>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="js/dsp.js"></script>
+    <script src="js/signal-generator.js"></script>
+    <script src="js/plotter.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

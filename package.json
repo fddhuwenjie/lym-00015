@@ -1,0 +1,13 @@
+{
+  "name": "signal-spectrum-analyzer",
+  "version": "1.0.0",
+  "description": "信号生成与频谱分析工具",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["dsp", "fft", "signal-analysis", "spectrum"],
+  "author": "",
+  "license": "MIT"
+}
