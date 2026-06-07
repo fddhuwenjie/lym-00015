@@ -410,7 +410,8 @@ const Plotter = (function() {
             }
             
             const fftResult = DSP.rfft(padded);
-            const magnitude = DSP.computeMagnitudeSpectrum(fftResult);
+            const coherentGain = DSP.WindowFunctions.getCoherentGain(window);
+            const magnitude = DSP.computeMagnitudeSpectrum(fftResult, coherentGain);
             const dbMagnitude = magnitude.map(v => Math.max(-100, DSP.linearToDb(v)));
             
             const halfLen = Math.floor(dbMagnitude.length / 2);

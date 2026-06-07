@@ -217,6 +217,11 @@ const App = (function() {
         
         const window = DSP.WindowFunctions.generate(state.windowFunction, state.windowSize);
         const windowedSignal = DSP.WindowFunctions.apply(rawSignal, window);
+        const coherentGain = DSP.WindowFunctions.getCoherentGain(window);
+        const energyGain = DSP.WindowFunctions.getEnergyGain(window);
+        state.currentWindow = window;
+        state.currentCoherentGain = coherentGain;
+        state.currentEnergyGain = energyGain;
         
         const fftResult = DSP.rfft(windowedSignal);
         state.currentSignal = rawSignal;
@@ -262,7 +267,7 @@ const App = (function() {
                 { maxFreq: state.sampleRate / 2 }
             );
         } else if (state.spectrumType === 'psd') {
-            const psd = DSP.computePSD(state.currentSpectrum, state.sampleRate);
+            const psd = DSP.computePSD(state.currentSpectrum, state.sampleRate, state.currentEnergyGain);
             const psdDb = psd.map(v => DSP.linearToDb(Math.sqrt(v)));
             const peaks = SignalGenerator.findPeaks(state.freqAxis, psdDb);
             
@@ -279,7 +284,7 @@ const App = (function() {
                 }
             );
         } else {
-            const magnitude = DSP.computeMagnitudeSpectrum(state.currentSpectrum);
+            const magnitude = DSP.computeMagnitudeSpectrum(state.currentSpectrum, state.currentCoherentGain);
             const magDb = magnitude.map(v => DSP.linearToDb(v));
             const peaks = SignalGenerator.findPeaks(state.freqAxis, magDb);
             
@@ -313,7 +318,7 @@ const App = (function() {
                     { maxFreq: state.sampleRate / 2 }
                 );
             } else if (state.spectrumType === 'psd') {
-                const psd = DSP.computePSD(state.filteredSpectrum, state.sampleRate);
+                const psd = DSP.computePSD(state.filteredSpectrum, state.sampleRate, state.currentEnergyGain);
                 Plotter.drawFrequencyDomain(
                     elements.filteredFreqCanvas,
                     psd,
@@ -325,7 +330,7 @@ const App = (function() {
                     }
                 );
             } else {
-                const magnitude = DSP.computeMagnitudeSpectrum(state.filteredSpectrum);
+                const magnitude = DSP.computeMagnitudeSpectrum(state.filteredSpectrum, state.currentCoherentGain);
                 Plotter.drawFrequencyDomain(
                     elements.filteredFreqCanvas,
                     magnitude,
@@ -381,12 +386,7 @@ const App = (function() {
             }
             
             if (signal.length > 0) {
-                state.importedSignal = signal;
-                
-                const maxWindow = Math.max(...signal.map(Math.abs));
-                for (let i = 0; i < signal.length; i++) {
-                    signal[i] /= maxWindow;
-                }
+                const originalLength = signal.length;
                 
                 if (signal.length < 1024) {
                     const padded = new Array(1024).fill(0);
@@ -394,13 +394,15 @@ const App = (function() {
                         padded[i] = signal[i];
                     }
                     state.importedSignal = padded;
+                } else {
+                    state.importedSignal = signal.slice();
                 }
                 
                 elements.windowSize.value = Math.min(8192, DSP.nextPowerOf2(state.importedSignal.length));
                 state.windowSize = parseInt(elements.windowSize.value);
                 
                 update();
-                alert(`成功导入 ${signal.length} 个采样点数据！`);
+                alert(`成功导入 ${originalLength} 个采样点数据！`);
             } else {
                 alert('无法解析文件内容，请确保是有效的CSV格式。');
             }

@@ -161,17 +161,23 @@ const DSP = (function() {
                 }
             }
             
+            return window;
+        },
+
+        getCoherentGain(window) {
             let sum = 0;
-            for (let i = 0; i < N; i++) {
+            for (let i = 0; i < window.length; i++) {
                 sum += window[i];
             }
-            const correction = N / sum;
-            
-            for (let i = 0; i < N; i++) {
-                window[i] *= correction;
+            return sum / window.length;
+        },
+
+        getEnergyGain(window) {
+            let sumSq = 0;
+            for (let i = 0; i < window.length; i++) {
+                sumSq += window[i] * window[i];
             }
-            
-            return window;
+            return sumSq / window.length;
         },
 
         apply(signal, window) {
@@ -223,6 +229,26 @@ const DSP = (function() {
             h[n] = val * window[n];
         }
 
+        let dcGain = 0;
+        for (let i = 0; i < h.length; i++) {
+            dcGain += h[i];
+        }
+        if (dcGain !== 0 && type !== 'highpass' && type !== 'bandstop') {
+            for (let i = 0; i < h.length; i++) {
+                h[i] /= dcGain;
+            }
+        } else if (type === 'highpass' || type === 'bandstop') {
+            let nyquistGain = 0;
+            for (let i = 0; i < h.length; i++) {
+                nyquistGain += h[i] * Math.pow(-1, i);
+            }
+            if (nyquistGain !== 0) {
+                for (let i = 0; i < h.length; i++) {
+                    h[i] /= nyquistGain;
+                }
+            }
+        }
+
         return h;
     }
 
@@ -248,13 +274,19 @@ const DSP = (function() {
         return convolve(signal, kernel);
     }
 
-    function computeMagnitudeSpectrum(fftResult) {
+    function computeMagnitudeSpectrum(fftResult, coherentGain = 1.0) {
         const N = fftResult.length;
         const halfN = Math.floor(N / 2);
         const magnitude = new Array(halfN);
+        const scale = 1.0 / ((N / 2) * coherentGain);
         
         for (let k = 0; k < halfN; k++) {
-            magnitude[k] = fftResult[k].magnitude() / (N / 2);
+            magnitude[k] = fftResult[k].magnitude() * scale;
+        }
+        
+        magnitude[0] /= 2;
+        if (halfN * 2 === N) {
+            magnitude[halfN - 1] /= 2;
         }
         
         return magnitude;
@@ -273,15 +305,16 @@ const DSP = (function() {
         return phase;
     }
 
-    function computePSD(fftResult, sampleRate) {
+    function computePSD(fftResult, sampleRate, energyGain = 1.0) {
         const N = fftResult.length;
         const halfN = Math.floor(N / 2);
         const psd = new Array(halfN);
         const freqBin = sampleRate / N;
+        const scale = 1.0 / (N * freqBin * energyGain);
         
         for (let k = 0; k < halfN; k++) {
             const mag = fftResult[k].magnitude();
-            psd[k] = (mag * mag) / (N * freqBin);
+            psd[k] = (mag * mag) * scale;
             if (k > 0 && k < halfN - 1) {
                 psd[k] *= 2;
             }
