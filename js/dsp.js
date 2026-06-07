@@ -195,6 +195,17 @@ const DSP = (function() {
         return Math.sin(Math.PI * x) / (Math.PI * x);
     }
 
+    function computeFreqResponseAtFreq(h, freq, sampleRate) {
+        const omega = 2 * Math.PI * freq / sampleRate;
+        let real = 0;
+        let imag = 0;
+        for (let n = 0; n < h.length; n++) {
+            real += h[n] * Math.cos(omega * n);
+            imag -= h[n] * Math.sin(omega * n);
+        }
+        return Math.sqrt(real * real + imag * imag);
+    }
+
     function designFIRFilter(type, order, fc1, fc2, sampleRate, windowType = 'hann') {
         const M = order;
         const N = M + 1;
@@ -229,23 +240,25 @@ const DSP = (function() {
             h[n] = val * window[n];
         }
 
-        let dcGain = 0;
-        for (let i = 0; i < h.length; i++) {
-            dcGain += h[i];
+        let normGain = 0;
+        if (type === 'lowpass') {
+            for (let i = 0; i < h.length; i++) {
+                normGain += h[i];
+            }
+        } else if (type === 'highpass') {
+            for (let i = 0; i < h.length; i++) {
+                normGain += h[i] * Math.pow(-1, i);
+            }
+        } else if (type === 'bandpass') {
+            const centerFreq = (fc1 + fc2) / 2;
+            normGain = computeFreqResponseAtFreq(h, centerFreq, sampleRate);
+        } else if (type === 'bandstop') {
+            const passbandFreq = fc1 / 2;
+            normGain = computeFreqResponseAtFreq(h, passbandFreq, sampleRate);
         }
-        if (dcGain !== 0 && type !== 'highpass' && type !== 'bandstop') {
+        if (normGain !== 0) {
             for (let i = 0; i < h.length; i++) {
-                h[i] /= dcGain;
-            }
-        } else if (type === 'highpass' || type === 'bandstop') {
-            let nyquistGain = 0;
-            for (let i = 0; i < h.length; i++) {
-                nyquistGain += h[i] * Math.pow(-1, i);
-            }
-            if (nyquistGain !== 0) {
-                for (let i = 0; i < h.length; i++) {
-                    h[i] /= nyquistGain;
-                }
+                h[i] /= normGain;
             }
         }
 
@@ -368,6 +381,11 @@ const DSP = (function() {
         linearToDb,
         generateFrequencyAxis,
         generateTimeAxis,
-        sinc
+        sinc,
+        computeFreqResponseAtFreq
     };
 })();
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = DSP;
+}
